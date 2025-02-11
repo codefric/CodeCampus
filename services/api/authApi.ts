@@ -11,6 +11,7 @@ export function useAuthApi() {
 
         async function executeLogin(newCredentials?: LoginCredentials) {
             const response = await execute(newCredentials);
+
             if (response?.token) {
                 token.value = response.token;
             }
