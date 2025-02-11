@@ -20,11 +20,7 @@ export function useHttp(baseURL: string) {
         });
     }
 
-    function usePost<TResponse, TBody>(
-        endpoint: string,
-        defaultBody?: TBody,
-        options?: CustomRequestOptions & UseHttpOptions
-    ) {
+    function usePost<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
         const body = ref(defaultBody);
         const { immediate = false, watch, ...requestOptions } = options || {};
 
@@ -44,11 +40,7 @@ export function useHttp(baseURL: string) {
         };
     }
 
-    function usePut<TResponse, TBody>(
-        endpoint: string,
-        defaultBody?: TBody,
-        options?: CustomRequestOptions & UseHttpOptions
-    ) {
+    function usePut<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
         const body = ref(defaultBody);
         const { immediate = false, watch, ...requestOptions } = options || {};
 
@@ -83,11 +75,7 @@ export function useHttp(baseURL: string) {
         };
     }
 
-    function usePatch<TResponse, TBody>(
-        endpoint: string,
-        defaultBody?: TBody,
-        options?: CustomRequestOptions & UseHttpOptions
-    ) {
+    function usePatch<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
         const body = ref(defaultBody);
         const { immediate = false, watch, ...requestOptions } = options || {};
 

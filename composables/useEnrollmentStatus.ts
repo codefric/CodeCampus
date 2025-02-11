@@ -1,4 +1,4 @@
-import type { Enrollment } from "~/types/course";
+import type { Enrollment } from '~/types/course';
 
 export async function useEnrollmentStatus(courseId: string | number) {
     const config = useRuntimeConfig();

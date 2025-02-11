@@ -1,4 +1,4 @@
-import { useEnrollmentStatus } from "~/composables/useEnrollmentStatus";
+import { useEnrollmentStatus } from '~/composables/useEnrollmentStatus';
 
 export default defineNuxtRouteMiddleware(async (to) => {
     const { $auth } = useNuxtApp();

@@ -66,19 +66,11 @@ export class HttpClient {
         return this.request<TResponse>('GET', endpoint, options);
     }
 
-    public async post<TResponse, TBody>(
-        endpoint: string,
-        body: TBody,
-        options?: CustomRequestOptions
-    ): Promise<TResponse> {
+    public async post<TResponse, TBody>(endpoint: string, body: TBody, options?: CustomRequestOptions): Promise<TResponse> {
         return this.request<TResponse>('POST', endpoint, { ...options, body });
     }
 
-    public async put<TResponse, TBody>(
-        endpoint: string,
-        body: TBody,
-        options?: CustomRequestOptions
-    ): Promise<TResponse> {
+    public async put<TResponse, TBody>(endpoint: string, body: TBody, options?: CustomRequestOptions): Promise<TResponse> {
         return this.request<TResponse>('PUT', endpoint, { ...options, body });
     }
 
@@ -86,11 +78,7 @@ export class HttpClient {
         return this.request<TResponse>('DELETE', endpoint, options);
     }
 
-    public async patch<TResponse, TBody>(
-        endpoint: string,
-        body: TBody,
-        options?: CustomRequestOptions
-    ): Promise<TResponse> {
+    public async patch<TResponse, TBody>(endpoint: string, body: TBody, options?: CustomRequestOptions): Promise<TResponse> {
         return this.request<TResponse>('PATCH', endpoint, { ...options, body });
     }
 }
