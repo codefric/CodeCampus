@@ -4,7 +4,7 @@ import type { NitroFetchRequest, NitroFetchOptions } from 'nitropack';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-interface CustomRequestOptions {
+export interface CustomRequestOptions {
     query?: Record<string, string>;
     headers?: HeadersInit;
 }
