@@ -28,7 +28,6 @@ export const useUIStore = defineStore(StoreIds.UI, {
         modals: {},
     }),
 
-
     getters: {
         isDarkMode: (state) => state.theme === 'dark',
 
