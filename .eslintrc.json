@@ -27,15 +27,42 @@
             }
         ],
         "no-debugger": "warn",
-        "indent": ["error", 4],
+        "indent": "off", // Turn off the base indent rule
         "vue/html-indent": ["error", 4],
         "vue/script-indent": [
             "error",
             4,
             {
-                "baseIndent": 1,
-                "switchCase": 1
+                "baseIndent": 0, // Changed from 1 to 0
+                "switchCase": 1,
+                "ignores": []
             }
-        ]
+        ],
+        "vue/max-attributes-per-line": [
+            "error",
+            {
+                "singleline": {
+                    "max": 1
+                },
+                "multiline": {
+                    "max": 1
+                }
+            }
+        ],
+        "vue/html-closing-bracket-newline": [
+            "error",
+            {
+                "singleline": "never",
+                "multiline": "always"
+            }
+        ],
+        "vue/multiline-html-element-content-newline": [
+            "error",
+            {
+                "ignoreWhenEmpty": true,
+                "allowEmptyLines": false
+            }
+        ],
+        "vue/singleline-html-element-content-newline": "off"
     }
 }

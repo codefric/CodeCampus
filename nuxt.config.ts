@@ -2,7 +2,14 @@
 export default defineNuxtConfig({
     compatibilityDate: '2024-11-01',
     devtools: { enabled: true },
-    modules: ['@nuxtjs/tailwindcss'],
+    modules: ['@nuxtjs/tailwindcss', '@nuxt/content'],
+
+    tailwindcss: {
+        cssPath: '~/assets/css/tailwind.css',
+        configPath: 'tailwind.config.js',
+        exposeConfig: false,
+        viewer: true,
+    },
 
     // Runtime config
     runtimeConfig: {
@@ -57,5 +64,41 @@ export default defineNuxtConfig({
     // Auto-imports
     imports: {
         dirs: ['composables/**', 'composables/api/**', 'utils/**'],
+    },
+
+    content: {
+        build: {
+            markdown: {
+                toc: {
+                    depth: 3, // include h3 headings
+                },
+                remarkPlugins: {
+                    // Override remark-emoji options
+                    'remark-emoji': {
+                        options: {
+                            emoticon: true,
+                        },
+                    },
+                    // Disable remark-gfm
+                    'remark-gfm': false,
+                    // Add remark-oembed
+                    'remark-oembed': {
+                        // Options
+                    },
+                },
+                highlight: {
+                    // Theme used in all color schemes.
+                    theme: {
+                        // Default theme (same as single string)
+                        default: 'github-light',
+                        // Theme used if `html.dark`
+                        dark: 'github-dark',
+                        // Theme used if `html.sepia`
+                        sepia: 'monokai',
+                    },
+                    langs: ['json', 'js', 'ts', 'html', 'css', 'vue', 'shell', 'mdc', 'md', 'yaml'],
+                },
+            },
+        },
     },
 });
