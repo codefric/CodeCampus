@@ -67,15 +67,21 @@ pnpm format
 These videos help developers understand the platform architecture and codebase:
 
 1. [Platform Architecture Overview](https://www.loom.com/share/34a9fabfa19246a4b020ef93e84b0dcb)
+
     - Overview of the platform structure
     - Key architectural decisions
     - Core features walkthrough
 
+2. [Documentation Guide](https://www.loom.com/share/2cc5bd20af7b433884a5d59bdcd006fb)
+    - How to add documentation
+    - Preview documentation changes
+    - Best practices for documentation
+
 <!-- Add more videos as they become available -->
 <!--
-2. [Authentication Flow Implementation](video-link-here)
-3. [Course Management System](video-link-here)
-4. [API Integration Guide](video-link-here)
+3. [Authentication Flow Implementation](video-link-here)
+4. [Course Management System](video-link-here)
+5. [API Integration Guide](video-link-here)
 -->
 
 ### Documentation
@@ -106,6 +112,6 @@ These videos help developers understand the platform architecture and codebase:
 
 For support and inquiries:
 
-- Email: support@yourwebsite.com
+- Email: <support@yourwebsite.com>
 - Discord: [Join our community](discord-link)
 - GitHub Issues: For bug reports and feature requests

@@ -64,7 +64,7 @@
 ### Development Tools
 
 - Version Control: Git
-- Package Manager: npm/yarn
+- Package Manager: pnpm/yarn
 - Testing Framework: [To be specified]
 - CI/CD: [To be specified]
 
@@ -92,7 +92,7 @@
 ### Prerequisites
 
 - Node.js (version X.X.X)
-- npm/yarn
+- pnpm/yarn
 - [Other requirements]
 
 ### Development Environment Setup
@@ -102,10 +102,10 @@
 git clone [repository-url]
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 ```
 
 [Additional sections to be added based on your specific implementation and requirements]
