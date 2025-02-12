@@ -5,6 +5,10 @@ useSeoMeta({
     title: home.value?.title,
     description: home.value?.description,
 });
+
+definePageMeta({
+    layout: 'docs',
+});
 </script>
 
 <template>

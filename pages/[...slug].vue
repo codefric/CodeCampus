@@ -5,6 +5,10 @@ useSeoMeta({
     title: 'Documentation',
     description: 'Project documentation',
 });
+
+definePageMeta({
+    layout: 'docs',
+});
 </script>
 
 <template>

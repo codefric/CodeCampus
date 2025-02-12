@@ -5,6 +5,7 @@
         <div>
             <p>default layout</p>
         </div>
+        <SharedToastContainer />
         <slot name="default" />
     </div>
 </template>
