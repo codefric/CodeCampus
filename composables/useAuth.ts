@@ -14,6 +14,7 @@ export function useAuth() {
     const { login: loginApi, register: registerApi, logout: logoutApi } = useAuthApi();
     const { getCurrentUser } = useUserApi();
     const router = useRouter();
+    const nuxtApp = useNuxtApp();
 
     // Centralized state management
     const state = useState<AuthState>('auth-state', () => ({
@@ -124,31 +125,35 @@ export function useAuth() {
         });
     }
 
-    // Lifecycle hooks
-    onMounted(() => {
-        init();
-    });
-
-    // Route navigation guard helper
+    // Route navigation guard helper that can be used in middleware or setup
     function requireAuth() {
         const route = useRoute();
-
-        // Setup navigation guard
-        onMounted(() => {
+        const redirectToLogin = () => {
             if (!isAuthenticated.value) {
                 router.push(`/login?redirect=${route.fullPath}`);
             }
-        });
+        };
 
-        // Watch for auth state changes
-        watch(isAuthenticated, (authenticated) => {
-            if (!authenticated) {
-                router.push(`/login?redirect=${route.fullPath}`);
-            }
+        if (import.meta.client) {
+            // Run immediately on client
+            redirectToLogin();
+            // Watch for auth state changes
+            watch(isAuthenticated, (authenticated) => {
+                if (!authenticated) {
+                    redirectToLogin();
+                }
+            });
+        }
+    }
+
+    // Initialize on app creation
+    if (import.meta.client) {
+        // Use nuxt app hooks for initialization
+        nuxtApp.hooks.hook('app:mounted', () => {
+            init();
         });
     }
 
-    // Public API
     return {
         // State
         user: computed(() => state.value.user),
