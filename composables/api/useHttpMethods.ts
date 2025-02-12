@@ -1,37 +1,50 @@
-import { HttpClient } from '~/utils/httpClient';
+import type { AsyncDataOptions } from 'nuxt/app';
 import type { WatchSource } from 'vue';
+import { HttpStatusCode } from '~/types/http';
+import { HttpClient } from '~/utils/httpClient';
 
 type MultiWatchSources = (WatchSource<unknown> | object)[];
 
-interface UseHttpOptions {
+interface UseHttpOptions<T> extends Omit<AsyncDataOptions<T>, 'watch'> {
     immediate?: boolean;
     watch?: MultiWatchSources;
+    errorMessages?: Partial<Record<HttpStatusCode, string>>;
 }
 
 export function useHttp(baseURL: string) {
     const client = new HttpClient(baseURL);
 
-    function useGet<TResponse>(endpoint: string, options?: CustomRequestOptions & UseHttpOptions) {
-        const { immediate = true, watch, ...requestOptions } = options || {};
+    function useGet<TResponse>(endpoint: string, options?: CustomRequestOptions & UseHttpOptions<TResponse>) {
+        const { immediate = true, watch, errorMessages, ...requestOptions } = options || {};
 
-        return useAsyncData(`get-${endpoint}`, () => client.get<TResponse>(endpoint, requestOptions), {
+        return useAsyncData<TResponse>(`get-${endpoint}`, () => client.get<TResponse>(endpoint, { ...requestOptions, errorMessages }), {
             immediate,
             watch,
+            default: () => null,
         });
     }
 
-    function usePost<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
+    function usePost<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions<TResponse>) {
         const body = ref(defaultBody);
-        const { immediate = false, watch, ...requestOptions } = options || {};
+        const { immediate = false, watch, errorMessages, ...requestOptions } = options || {};
 
-        async function execute(newBody?: TBody) {
-            if (newBody) {
+        async function execute(newBody?: TBody): Promise<TResponse> {
+            if (newBody !== undefined) {
                 body.value = newBody;
             }
-            return client.post<TResponse, TBody>(endpoint, body.value as TBody, requestOptions);
+
+            if (body.value === undefined) {
+                throw new Error('Body is required for POST request');
+            }
+
+            return client.post<TResponse, TBody>(endpoint, body.value, { ...requestOptions, errorMessages });
         }
 
-        const asyncData = useAsyncData(`post-${endpoint}`, () => execute(), { immediate, watch });
+        const asyncData = useAsyncData<TResponse>(`post-${endpoint}`, () => execute(), {
+            immediate,
+            watch,
+            default: () => null,
+        });
 
         return {
             ...asyncData,
@@ -40,18 +53,27 @@ export function useHttp(baseURL: string) {
         };
     }
 
-    function usePut<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
+    function usePut<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions<TResponse>) {
         const body = ref(defaultBody);
-        const { immediate = false, watch, ...requestOptions } = options || {};
+        const { immediate = false, watch, errorMessages, ...requestOptions } = options || {};
 
-        async function execute(newBody?: TBody) {
-            if (newBody) {
+        async function execute(newBody?: TBody): Promise<TResponse> {
+            if (newBody !== undefined) {
                 body.value = newBody;
             }
-            return client.put<TResponse, TBody>(endpoint, body.value as TBody, requestOptions);
+
+            if (body.value === undefined) {
+                throw new Error('Body is required for PUT request');
+            }
+
+            return client.put<TResponse, TBody>(endpoint, body.value, { ...requestOptions, errorMessages });
         }
 
-        const asyncData = useAsyncData(`put-${endpoint}`, () => execute(), { immediate, watch });
+        const asyncData = useAsyncData<TResponse>(`put-${endpoint}`, () => execute(), {
+            immediate,
+            watch,
+            default: () => null,
+        });
 
         return {
             ...asyncData,
@@ -60,14 +82,18 @@ export function useHttp(baseURL: string) {
         };
     }
 
-    function useDelete<TResponse>(endpoint: string, options?: CustomRequestOptions & UseHttpOptions) {
-        const { immediate = false, watch, ...requestOptions } = options || {};
+    function useDelete<TResponse>(endpoint: string, options?: CustomRequestOptions & UseHttpOptions<TResponse>) {
+        const { immediate = false, watch, errorMessages, ...requestOptions } = options || {};
 
-        async function execute() {
-            return client.delete<TResponse>(endpoint, requestOptions);
+        async function execute(): Promise<TResponse> {
+            return client.delete<TResponse>(endpoint, { ...requestOptions, errorMessages });
         }
 
-        const asyncData = useAsyncData(`delete-${endpoint}`, () => execute(), { immediate, watch });
+        const asyncData = useAsyncData<TResponse>(`delete-${endpoint}`, () => execute(), {
+            immediate,
+            watch,
+            default: () => null,
+        });
 
         return {
             ...asyncData,
@@ -75,18 +101,27 @@ export function useHttp(baseURL: string) {
         };
     }
 
-    function usePatch<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions) {
+    function usePatch<TResponse, TBody>(endpoint: string, defaultBody?: TBody, options?: CustomRequestOptions & UseHttpOptions<TResponse>) {
         const body = ref(defaultBody);
-        const { immediate = false, watch, ...requestOptions } = options || {};
+        const { immediate = false, watch, errorMessages, ...requestOptions } = options || {};
 
-        async function execute(newBody?: TBody) {
-            if (newBody) {
+        async function execute(newBody?: TBody): Promise<TResponse> {
+            if (newBody !== undefined) {
                 body.value = newBody;
             }
-            return client.patch<TResponse, TBody>(endpoint, body.value as TBody, requestOptions);
+
+            if (body.value === undefined) {
+                throw new Error('Body is required for PATCH request');
+            }
+
+            return client.patch<TResponse, TBody>(endpoint, body.value, { ...requestOptions, errorMessages });
         }
 
-        const asyncData = useAsyncData(`patch-${endpoint}`, () => execute(), { immediate, watch });
+        const asyncData = useAsyncData<TResponse>(`patch-${endpoint}`, () => execute(), {
+            immediate,
+            watch,
+            default: () => null,
+        });
 
         return {
             ...asyncData,

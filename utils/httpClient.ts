@@ -1,12 +1,13 @@
-// utils/httpClient.ts
-import type { FetchError } from 'ofetch';
-import type { NitroFetchRequest, NitroFetchOptions } from 'nitropack';
+import type { NitroFetchOptions, NitroFetchRequest } from 'nitropack';
+import { FetchError } from 'ofetch';
+import { HttpError, HttpStatusCode } from '../types/http';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 export interface CustomRequestOptions {
     query?: Record<string, string>;
     headers?: HeadersInit;
+    errorMessages?: Partial<Record<HttpStatusCode, string>>;
 }
 
 export class HttpClient {
@@ -32,6 +33,32 @@ export class HttpClient {
         return url.toString();
     }
 
+    private handleError(error: FetchError, customErrorMessages?: Partial<Record<HttpStatusCode, string>>): never {
+        const statusCode = error.response?.status as HttpStatusCode;
+        const responseData = error.response?._data;
+
+        // Use custom error message if provided, fall back to default, or use the response error message
+        const errorMessage =
+            customErrorMessages?.[statusCode] ?? defaultErrorMessages[statusCode] ?? responseData?.message ?? error.message;
+
+        // Handle specific status codes
+        switch (statusCode) {
+            case HttpStatusCode.UNAUTHORIZED: {
+                const router = useRouter();
+                router.push('/login');
+                break;
+            }
+            case HttpStatusCode.TOO_MANY_REQUESTS:
+                // Implement rate limiting handling if needed
+                break;
+            case HttpStatusCode.SERVICE_UNAVAILABLE:
+                // Implement service unavailability handling if needed
+                break;
+        }
+
+        throw new HttpError(statusCode, errorMessage, responseData);
+    }
+
     private async request<TResponse>(
         method: HttpMethod,
         endpoint: string,
@@ -54,9 +81,8 @@ export class HttpClient {
         try {
             return await $fetch<TResponse>(url, fetchOptions);
         } catch (error) {
-            if ((error as FetchError).response?.status === 401) {
-                const router = useRouter();
-                router.push('/login');
+            if (error instanceof FetchError) {
+                this.handleError(error, options?.errorMessages);
             }
             throw error;
         }
