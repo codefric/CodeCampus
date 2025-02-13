@@ -106,10 +106,28 @@ onUnmounted(() => {
         v-if="home"
         :value="home"
     />
-    <div v-else>
-        <button @click="showSuccessToast">showSuccessToast</button>
-        <button @click="showErrorToast">showErrorToast</button>
-        <button @click="showPersistentWarning">showPersistentWarning</button>
+    <div
+        v-else
+        class="flex flex-col items-center gap-4"
+    >
+        <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            @click="showSuccessToast"
+        >
+            showSuccessToast
+        </button>
+        <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            @click="showErrorToast"
+        >
+            showErrorToast
+        </button>
+        <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            @click="showPersistentWarning"
+        >
+            showPersistentWarning
+        </button>
 
         <div class="space-x-4">
             <button
