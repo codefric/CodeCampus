@@ -2,6 +2,15 @@
 import { defineStore } from 'pinia';
 import { StoreIds } from './index';
 
+export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full' | number;
+export type DrawerPlacement = 'left' | 'right';
+
+interface DrawerState {
+    isOpen: boolean;
+    size: DrawerSize;
+    placement: DrawerPlacement;
+}
+
 export interface UIState {
     theme: 'light' | 'dark';
     sidebar: {
@@ -15,6 +24,7 @@ export interface UIState {
         timeout?: number;
     }>;
     modals: Record<string, boolean>;
+    drawers: Record<string, DrawerState>;
 }
 
 export const useUIStore = defineStore(StoreIds.UI, {
@@ -26,6 +36,7 @@ export const useUIStore = defineStore(StoreIds.UI, {
         },
         notifications: [],
         modals: {},
+        drawers: {},
     }),
 
     getters: {
@@ -35,6 +46,14 @@ export const useUIStore = defineStore(StoreIds.UI, {
 
         isModalOpen: (state) => {
             return (modalId: string) => state.modals[modalId] ?? false;
+        },
+
+        isDrawerOpen: (state) => {
+            return (drawerId: string) => state.drawers[drawerId]?.isOpen ?? false;
+        },
+
+        getDrawerState: (state) => {
+            return (drawerId: string) => state.drawers[drawerId];
         },
     },
 
@@ -101,6 +120,54 @@ export const useUIStore = defineStore(StoreIds.UI, {
 
         toggleModal(modalId: string) {
             this.modals[modalId] = !this.modals[modalId];
+        },
+
+        registerDrawer(
+            drawerId: string,
+            options: {
+                size?: DrawerSize;
+                placement?: DrawerPlacement;
+            } = {}
+        ) {
+            this.drawers[drawerId] = {
+                isOpen: false,
+                size: options.size ?? 'md',
+                placement: options.placement ?? 'right',
+            };
+        },
+
+        unregisterDrawer(drawerId: string) {
+            delete this.drawers[drawerId];
+        },
+
+        openDrawer(drawerId: string) {
+            if (this.drawers[drawerId]) {
+                this.drawers[drawerId].isOpen = true;
+            }
+        },
+
+        closeDrawer(drawerId: string) {
+            if (this.drawers[drawerId]) {
+                this.drawers[drawerId].isOpen = false;
+            }
+        },
+
+        toggleDrawer(drawerId: string) {
+            if (this.drawers[drawerId]) {
+                this.drawers[drawerId].isOpen = !this.drawers[drawerId].isOpen;
+            }
+        },
+
+        updateDrawerSize(drawerId: string, size: DrawerSize) {
+            if (this.drawers[drawerId]) {
+                this.drawers[drawerId].size = size;
+            }
+        },
+
+        updateDrawerPlacement(drawerId: string, placement: DrawerPlacement) {
+            if (this.drawers[drawerId]) {
+                this.drawers[drawerId].placement = placement;
+            }
         },
     },
 });

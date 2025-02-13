@@ -1,4 +1,6 @@
+# script section
 <script setup lang="ts">
+import type { DrawerPlacement, DrawerSize } from '~/store/ui';
 import { useUIStore } from '~/store/ui';
 
 const { data: home } = await useAsyncData(() => queryCollection('content').path('/').first());
@@ -76,6 +78,27 @@ const openModal = (modalId: string) => {
         uiStore.openModal(modalId);
     }
 };
+
+const drawer = useDrawer('unique-drawer-id');
+
+// Drawer configuration state
+const drawerConfig = reactive({
+    placement: 'right' as DrawerPlacement,
+    size: 'lg' as DrawerSize,
+});
+
+// Register drawer with options
+onMounted(() => {
+    drawer.register({
+        size: drawerConfig.size,
+        placement: drawerConfig.placement,
+    });
+});
+
+// Clean up on unmount
+onUnmounted(() => {
+    drawer.unregister();
+});
 </script>
 
 <template>
@@ -107,5 +130,29 @@ const openModal = (modalId: string) => {
         >
             <p>{{ activeModal.content }}</p>
         </SharedBaseModal>
+
+        <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            @click="drawer.toggle"
+        >
+            Toggle Drawer
+        </button>
+
+        <SharedDrawer
+            v-model:is-open="drawer.isOpen.value"
+            :placement="drawerConfig.placement"
+            :size="drawerConfig.size"
+            @close="drawer.close"
+        >
+            <template #header>
+                <h2>Drawer Title</h2>
+            </template>
+
+            <div>Drawer Content</div>
+
+            <template #footer>
+                <button @click="drawer.close">Close</button>
+            </template>
+        </SharedDrawer>
     </div>
 </template>
