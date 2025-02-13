@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue';
 import { useUIStore } from '~/store/ui';
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
