@@ -10,7 +10,7 @@ interface Props {
     state?: ButtonState;
     disabled?: boolean;
     error?: boolean;
-    isSubmitting?: boolean;
+    isLoading?: boolean;
     className?: string;
     innerClassName?: string;
     textClass?: string;
@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
     disabled: false,
     error: false,
     label: '',
-    isSubmitting: false,
+    isLoading: false,
     className: '',
     innerClassName: '',
     textClass: '',
@@ -79,7 +79,7 @@ const stateClasses = computed(() => ({
 
     // Disabled state
     'bg-gradient-to-b from-white to-gray-50 opacity-50 cursor-not-allowed !border-gray-300 hover:!bg-gradient-to-b hover:!from-white hover:!to-gray-50 active:!bg-gradient-to-b active:!from-white active:!to-gray-50':
-        props.disabled || props.isSubmitting,
+        props.disabled || props.isLoading,
 
     [props.className]: true,
 }));
@@ -88,7 +88,7 @@ const stateClasses = computed(() => ({
 <template>
     <button
         :class="[stateClasses, sizeClasses]"
-        :disabled="disabled || isSubmitting"
+        :disabled="disabled || isLoading"
         @click="$emit('click')"
     >
         <div
@@ -110,7 +110,7 @@ const stateClasses = computed(() => ({
             </span>
 
             <span
-                v-if="hasTrailingIcon"
+                v-if="hasTrailingIcon && !isLoading"
                 :class="[iconSizeClass, !isIconOnly && 'ml-2']"
             >
                 <slot name="trailing-icon" />
@@ -118,7 +118,7 @@ const stateClasses = computed(() => ({
         </div>
 
         <span
-            v-if="isSubmitting"
+            v-if="isLoading"
             class="spinner ml-2"
         />
     </button>
