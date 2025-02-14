@@ -110,6 +110,15 @@ const handleSelect = (item: any) => {
     alert(`Selected: ${item.label}`);
 };
 
+const handleChipClick = () => {
+    alert('clicked');
+};
+
+const handleChipClose = () => {
+    // Handle chip close action
+    alert('Chip closed');
+};
+
 // Lifecycle hooks
 onMounted(() => {
     drawer.register({
@@ -629,6 +638,163 @@ onUnmounted(() => {
                                                 />
                                             </template>
                                         </SharedBaseInput>
+                                    </div>
+
+                                    <div class="space-y-8">
+                                        <!-- Basic Chips -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">Basic Chips</h3>
+                                            <div class="flex flex-wrap gap-2">
+                                                <SharedBaseChip label="Default" />
+                                                <SharedBaseChip
+                                                    label="Primary"
+                                                    color="primary"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Success"
+                                                    color="success"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Warning"
+                                                    color="warning"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Error"
+                                                    color="error"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Info"
+                                                    color="info"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Variants -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">Variants</h3>
+                                            <div class="flex flex-wrap gap-2">
+                                                <SharedBaseChip
+                                                    label="Solid"
+                                                    color="primary"
+                                                    variant="solid"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Outline"
+                                                    color="primary"
+                                                    variant="outline"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Soft"
+                                                    color="primary"
+                                                    variant="soft"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Sizes -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">Sizes</h3>
+                                            <div class="flex flex-wrap gap-2 items-center">
+                                                <SharedBaseChip
+                                                    label="Small"
+                                                    color="primary"
+                                                    size="sm"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Medium"
+                                                    color="primary"
+                                                    size="md"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Large"
+                                                    color="primary"
+                                                    size="lg"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- With Icons -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">With Icons</h3>
+                                            <div class="flex flex-wrap gap-2">
+                                                <SharedBaseChip
+                                                    label="Profile"
+                                                    color="primary"
+                                                    icon="ph:user"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Settings"
+                                                    color="info"
+                                                    icon="ph:gear"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Success"
+                                                    color="success"
+                                                    icon="ph:check"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Interactive Chips -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">Interactive Chips</h3>
+                                            <div class="flex flex-wrap gap-2">
+                                                <SharedBaseChip
+                                                    label="Clickable"
+                                                    color="primary"
+                                                    clickable
+                                                    @click="handleChipClick"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Closeable"
+                                                    color="error"
+                                                    closeable
+                                                    @close="handleChipClose"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Active"
+                                                    color="success"
+                                                    active
+                                                    clickable
+                                                />
+                                                <SharedBaseChip
+                                                    label="Disabled"
+                                                    color="warning"
+                                                    disabled
+                                                    clickable
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Combined Features -->
+                                        <div class="space-y-4">
+                                            <h3 class="text-lg font-medium">Combined Features</h3>
+                                            <div class="flex flex-wrap gap-2">
+                                                <SharedBaseChip
+                                                    label="Full Featured"
+                                                    color="primary"
+                                                    icon="ph:star"
+                                                    clickable
+                                                    closeable
+                                                    @click="handleChipClick"
+                                                    @close="handleChipClose"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Active & Closeable"
+                                                    color="success"
+                                                    active
+                                                    closeable
+                                                    @close="handleChipClose"
+                                                />
+                                                <SharedBaseChip
+                                                    label="Icon & Outline"
+                                                    color="info"
+                                                    variant="outline"
+                                                    icon="ph:info"
+                                                    clickable
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </section>
                             </div>
