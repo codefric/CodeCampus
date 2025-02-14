@@ -105,6 +105,27 @@ const radioOptions = [
     },
 ];
 
+const selectedItems = ref(['option1']);
+const singleCheckbox = ref();
+
+const checkboxOptions = [
+    {
+        label: 'Option 1',
+        value: 'option1',
+        description: 'This is the first option',
+    },
+    {
+        label: 'Option 2',
+        value: 'option2',
+        description: 'This is the second option',
+        disabled: true,
+    },
+    {
+        label: 'Option 3',
+        value: 'option3',
+    },
+];
+
 // Methods
 const showSuccessToast = () => {
     toast.success('Operation completed successfully!');
@@ -658,6 +679,75 @@ onUnmounted(() => {
                                                 />
                                             </template>
                                         </SharedBaseInput>
+                                    </div>
+
+                                    <div class="space-y-8">
+                                        <!-- Basic Checkbox Group -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Basic Checkbox Group</h3>
+                                            <SharedBaseCheckboxGroup
+                                                v-model="selectedItems"
+                                                :options="checkboxOptions"
+                                                name="basic-group"
+                                            />
+                                        </div>
+
+                                        <!-- Horizontal Layout -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Horizontal Layout</h3>
+                                            <SharedBaseCheckboxGroup
+                                                v-model="selectedItems"
+                                                :options="checkboxOptions"
+                                                orientation="horizontal"
+                                                name="horizontal-group"
+                                            />
+                                        </div>
+
+                                        <!-- Different Sizes -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Sizes</h3>
+                                            <div class="space-y-6">
+                                                <SharedBaseCheckboxGroup
+                                                    v-model="selectedItems"
+                                                    :options="checkboxOptions"
+                                                    size="sm"
+                                                    name="small-group"
+                                                />
+                                                <SharedBaseCheckboxGroup
+                                                    v-model="selectedItems"
+                                                    :options="checkboxOptions"
+                                                    size="md"
+                                                    name="medium-group"
+                                                />
+                                                <SharedBaseCheckboxGroup
+                                                    v-model="selectedItems"
+                                                    :options="checkboxOptions"
+                                                    size="lg"
+                                                    name="large-group"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Error State -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Error State</h3>
+                                            <SharedBaseCheckboxGroup
+                                                v-model="selectedItems"
+                                                :options="checkboxOptions"
+                                                error
+                                                name="error-group"
+                                            />
+                                        </div>
+
+                                        <!-- Single Checkbox -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Single Checkbox</h3>
+                                            <SharedBaseCheckbox
+                                                v-model="singleCheckbox"
+                                                label="Individual checkbox"
+                                                description="With description"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div class="space-y-8">
