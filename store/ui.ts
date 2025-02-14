@@ -11,6 +11,11 @@ interface DrawerState {
     placement: DrawerPlacement;
 }
 
+interface BannerState {
+    isVisible: boolean;
+    isCollapsed: boolean;
+}
+
 export interface UIState {
     theme: 'light' | 'dark';
     sidebar: {
@@ -25,6 +30,7 @@ export interface UIState {
     }>;
     modals: Record<string, boolean>;
     drawers: Record<string, DrawerState>;
+    banners: Record<string, BannerState>;
 }
 
 export const useUIStore = defineStore(StoreIds.UI, {
@@ -37,6 +43,7 @@ export const useUIStore = defineStore(StoreIds.UI, {
         notifications: [],
         modals: {},
         drawers: {},
+        banners: {},
     }),
 
     getters: {
@@ -167,6 +174,36 @@ export const useUIStore = defineStore(StoreIds.UI, {
         updateDrawerPlacement(drawerId: string, placement: DrawerPlacement) {
             if (this.drawers[drawerId]) {
                 this.drawers[drawerId].placement = placement;
+            }
+        },
+        registerBanner(bannerId: string) {
+            if (!this.banners[bannerId]) {
+                this.banners[bannerId] = {
+                    isVisible: true,
+                    isCollapsed: false,
+                };
+            }
+        },
+
+        unregisterBanner(bannerId: string) {
+            delete this.banners[bannerId];
+        },
+
+        toggleBannerCollapse(bannerId: string) {
+            if (this.banners[bannerId]) {
+                this.banners[bannerId].isCollapsed = !this.banners[bannerId].isCollapsed;
+            }
+        },
+
+        hideBanner(bannerId: string) {
+            if (this.banners[bannerId]) {
+                this.banners[bannerId].isVisible = false;
+            }
+        },
+
+        showBanner(bannerId: string) {
+            if (this.banners[bannerId]) {
+                this.banners[bannerId].isVisible = true;
             }
         },
     },

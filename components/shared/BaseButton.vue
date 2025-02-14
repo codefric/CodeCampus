@@ -14,6 +14,7 @@ interface Props {
     className?: string;
     innerClassName?: string;
     textClass?: string;
+    active?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,6 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
     className: '',
     innerClassName: '',
     textClass: '',
+    active: false,
 });
 
 defineEmits<{
@@ -58,21 +60,27 @@ const iconSizeClass = computed(() => {
 const stateClasses = computed(() => ({
     'inline-flex items-center justify-center rounded-xl font-medium transition-all text-[14px] font-semibold': true,
 
-    // Default state
+    // Default state with active
     'border border-transparent bg-white hover:!border-[#DCFAE6] hover:!bg-[#ECFDF3] active:!bg-[#DCFAE6] active:!border-[#ABEFC6]':
-        props.state === 'default' && !props.error,
+        props.state === 'default' && !props.error && !props.active,
+    'border border-[#ABEFC6] bg-[#DCFAE6]': props.state === 'default' && !props.error && props.active,
 
-    // Semi-filled state
+    // Semi-filled state with active
     'border border-[#D5D7DA] bg-gradient-to-b from-white to-[#FAFAFA] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] hover:border-[#75E0A7] hover:bg-gradient-to-b hover:from-white hover:to-[#ECFDF3] hover:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] active:border-[#47CD89] active:bg-gradient-to-b active:from-[#DCFAE6] active:to-[#ABEFC6] active:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'semi-filled' && !props.error,
+        props.state === 'semi-filled' && !props.error && !props.active,
+    'border border-[#47CD89] bg-gradient-to-b from-[#DCFAE6] to-[#ABEFC6] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
+        props.state === 'semi-filled' && !props.error && props.active,
 
-    // Filled state
+    // Filled state with active
     'border border-[#47CD89] bg-gradient-to-b from-[#DCFAE6] to-[#ABEFC6] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] hover:border-[#47CD89] hover:bg-gradient-to-b hover:from-[#ABEFC6] hover:to-[#75E0A7] hover:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] active:border-[#47CD89] active:bg-gradient-to-b active:from-[#75E0A7] active:to-[#47CD89] active:shadow-[0px_20px_0px_0px_rgba(255,255,255,0.05)_inset,0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'filled' && !props.error,
+        props.state === 'filled' && !props.error && !props.active,
+    'border border-[#47CD89] bg-gradient-to-b from-[#75E0A7] to-[#47CD89] shadow-[0px_20px_0px_0px_rgba(255,255,255,0.05)_inset,0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
+        props.state === 'filled' && !props.error && props.active,
 
-    // Outline state
+    // Outline state with active
     'bg-white border border-[#E9EAEB] hover:border-[#75E0A7] active:bg-[#DCFAE6] active:border-[#ABEFC6]':
-        props.state === 'outline' && !props.error,
+        props.state === 'outline' && !props.error && !props.active,
+    'bg-[#DCFAE6] border border-[#ABEFC6]': props.state === 'outline' && !props.error && props.active,
 
     // Error states
     'border border-red-500 bg-red-50 text-red-600 hover:bg-red-100 active:bg-red-200': props.error,

@@ -2,12 +2,21 @@
 import type { DrawerPlacement, DrawerSize } from '~/store/ui';
 import { useUIStore } from '~/store/ui';
 
+const bannerId = 'my-banner';
+const { show, toggle, isVisible } = useBanner(bannerId);
+
 // Store and UI state management
 const toast = useToast();
 const uiStore = useUIStore();
 const drawer = useDrawer('component-library-drawer');
 const searchQuery = ref('');
 const activeTab = ref('buttons');
+
+// You can now use these functions anywhere in your component
+const showBannerAfterAction = () => {
+    // Do something
+    show();
+};
 
 // Modal configurations
 const modalTypes = [
@@ -132,7 +141,8 @@ onUnmounted(() => {
                         <SharedBaseButton
                             v-for="tab in availableTabs"
                             :key="tab.id"
-                            :state="activeTab === tab.id ? 'filled' : 'outline'"
+                            :state="'semi-filled'"
+                            :active="activeTab === tab.id"
                             @click="activeTab = tab.id"
                         >
                             {{ tab.label }}
@@ -244,6 +254,7 @@ onUnmounted(() => {
                                         <SharedBaseButton
                                             state="outline"
                                             variant="trailing-icon"
+                                            @click="showBannerAfterAction"
                                         >
                                             View More
                                             <template #trailing-icon>
@@ -307,6 +318,33 @@ onUnmounted(() => {
                                         </SharedBaseButton>
                                     </div>
                                 </section>
+
+                                <div class="space-y-4">
+                                    <SharedBaseBanner
+                                        :id="bannerId"
+                                        type="info"
+                                    >
+                                        <template #title> Important Notice </template>
+                                        This is an important message that can be collapsed or dismissed.
+                                    </SharedBaseBanner>
+
+                                    <!-- Example controls -->
+                                    <div class="space-x-4">
+                                        <SharedBaseButton
+                                            v-if="!isVisible"
+                                            state="filled"
+                                            @click="show"
+                                        >
+                                            Show Banner
+                                        </SharedBaseButton>
+                                        <SharedBaseButton
+                                            state="outline"
+                                            @click="toggle"
+                                        >
+                                            Toggle Banner
+                                        </SharedBaseButton>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
