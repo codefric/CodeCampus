@@ -85,6 +85,26 @@ const availableTabs = [
     { id: 'inputs', label: 'Inputs' },
 ] as const;
 
+const selectedValue = ref('option1');
+
+const radioOptions = [
+    {
+        label: 'Option 1',
+        value: 'option1',
+        description: 'This is the first option',
+    },
+    {
+        label: 'Option 2',
+        value: 'option2',
+        description: 'This is the second option',
+        disabled: true,
+    },
+    {
+        label: 'Option 3',
+        value: 'option3',
+    },
+];
+
 // Methods
 const showSuccessToast = () => {
     toast.success('Operation completed successfully!');
@@ -638,6 +658,65 @@ onUnmounted(() => {
                                                 />
                                             </template>
                                         </SharedBaseInput>
+                                    </div>
+
+                                    <div class="space-y-8">
+                                        <!-- Basic Radio Group -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Basic Radio Group</h3>
+                                            <SharedBaseRadioGroup
+                                                v-model="selectedValue"
+                                                :options="radioOptions"
+                                                name="basic-group"
+                                            />
+                                        </div>
+
+                                        <!-- Horizontal Radio Group -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Horizontal Layout</h3>
+                                            <SharedBaseRadioGroup
+                                                v-model="selectedValue"
+                                                :options="radioOptions"
+                                                orientation="horizontal"
+                                                name="horizontal-group"
+                                            />
+                                        </div>
+
+                                        <!-- Different Sizes -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Sizes</h3>
+                                            <div class="space-y-6">
+                                                <SharedBaseRadioGroup
+                                                    v-model="selectedValue"
+                                                    :options="radioOptions"
+                                                    size="sm"
+                                                    name="small-group"
+                                                />
+                                                <SharedBaseRadioGroup
+                                                    v-model="selectedValue"
+                                                    :options="radioOptions"
+                                                    size="md"
+                                                    name="medium-group"
+                                                />
+                                                <SharedBaseRadioGroup
+                                                    v-model="selectedValue"
+                                                    :options="radioOptions"
+                                                    size="lg"
+                                                    name="large-group"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Error State -->
+                                        <div>
+                                            <h3 class="text-lg font-medium mb-4">Error State</h3>
+                                            <SharedBaseRadioGroup
+                                                v-model="selectedValue"
+                                                :options="radioOptions"
+                                                error
+                                                name="error-group"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div class="space-y-8">
