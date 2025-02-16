@@ -6,6 +6,18 @@ interface SignalingMessage {
     viewerId?: string;
 }
 
+// Base WebRTC configuration with multiple STUN servers for redundancy
+const RTC_CONFIG: RTCConfiguration = {
+    iceServers: [
+        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+        { urls: ['stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] },
+    ],
+    iceCandidatePoolSize: 10,
+    iceTransportPolicy: 'all',
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require',
+};
+
 export function useWebRTC(isHost: boolean = false) {
     const peerConnection = ref<RTCPeerConnection | null>(null);
     const socket = ref<WebSocket | null>(null);
@@ -14,236 +26,353 @@ export function useWebRTC(isHost: boolean = false) {
     const isConnected = ref(false);
     const viewerCount = ref(0);
     const pendingCandidates = ref<RTCIceCandidate[]>([]);
+    const currentStreamId = ref<string>('');
+    const reconnectAttempts = ref(0);
+    const maxReconnectAttempts = 3;
 
-    // WebSocket Signaling Setup
-    function connectSignaling(streamId: string) {
-        const wsUrl = `${import.meta.env.VITE_WS_URL}/rtc/${streamId}`;
-        socket.value = new WebSocket(wsUrl);
+    // WebSocket connection with timeout and reconnection
+    async function connectToSignalingServer(streamId: string): Promise<void> {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.hostname}:34567/ws?streamId=${streamId}`;
+        console.log('[WebSocket] Connecting to:', wsUrl);
 
-        socket.value.onopen = () => {
-            console.log('Connected to signaling server');
-            isConnected.value = true;
-            if (!isHost) {
-                sendSignalingMessage({
-                    type: 'viewer-connected',
-                    data: null,
-                    streamId,
-                });
+        return new Promise((resolve, reject) => {
+            try {
+                const ws = new WebSocket(wsUrl);
+                socket.value = ws;
+
+                const timeout = setTimeout(() => {
+                    ws.close();
+                    reject(new Error('WebSocket connection timeout'));
+                }, 10000);
+
+                ws.onopen = () => {
+                    clearTimeout(timeout);
+                    console.log('[WebSocket] Connected successfully');
+                    isConnected.value = true;
+                    reconnectAttempts.value = 0;
+
+                    if (!isHost) {
+                        sendSignalingMessage({
+                            type: 'viewer-connected',
+                            data: null,
+                            streamId,
+                        });
+                    }
+                    resolve();
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const message: SignalingMessage = JSON.parse(event.data);
+                        console.log('[WebSocket] Received message:', message);
+                        handleSignalingMessage(message);
+                    } catch (err) {
+                        console.error('[WebSocket] Message parsing error:', err);
+                    }
+                };
+
+                ws.onerror = (event) => {
+                    console.error('[WebSocket] Error:', event);
+                    error.value = 'WebSocket connection failed';
+                    reject(new Error('WebSocket connection failed'));
+                };
+
+                ws.onclose = async (event) => {
+                    console.log('[WebSocket] Connection closed:', {
+                        code: event.code,
+                        reason: event.reason,
+                        wasClean: event.wasClean,
+                    });
+                    isConnected.value = false;
+
+                    if (reconnectAttempts.value < maxReconnectAttempts) {
+                        console.log(`[WebSocket] Attempting to reconnect (${reconnectAttempts.value + 1}/${maxReconnectAttempts})`);
+                        reconnectAttempts.value++;
+                        await new Promise((r) => setTimeout(r, 2000 * reconnectAttempts.value));
+                        connectToSignalingServer(streamId).catch(console.error);
+                    } else {
+                        error.value = 'Connection lost. Please refresh the page.';
+                        cleanup();
+                    }
+                };
+            } catch (err) {
+                reject(err);
             }
-        };
-
-        socket.value.onmessage = async (event) => {
-            const message: SignalingMessage = JSON.parse(event.data);
-            handleSignalingMessage(message);
-        };
-
-        socket.value.onerror = (err) => {
-            console.error('WebSocket error:', err);
-            error.value = 'Connection error';
-        };
-
-        socket.value.onclose = () => {
-            console.log('WebSocket connection closed');
-            isConnected.value = false;
-            cleanup();
-        };
+        });
     }
 
-    // Initialize WebRTC Connection
-    function initializePeerConnection() {
-        if (peerConnection.value) {
-            peerConnection.value.close();
-        }
+    // Initialize WebRTC peer connection with comprehensive logging
+    function createPeerConnection(): RTCPeerConnection {
+        const pc = new RTCPeerConnection(RTC_CONFIG);
 
-        const configuration: RTCConfiguration = {
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
-            iceCandidatePoolSize: 10,
-        };
-
-        peerConnection.value = new RTCPeerConnection(configuration);
-
-        // ICE Candidate handling
-        peerConnection.value.onicecandidate = (event) => {
-            if (event.candidate) {
+        pc.onicecandidate = ({ candidate }) => {
+            if (candidate) {
+                console.log('[WebRTC] New ICE candidate:', candidate);
                 sendSignalingMessage({
                     type: 'ice-candidate',
-                    data: event.candidate,
-                    streamId: stream.value?.id || '',
+                    data: candidate,
+                    streamId: currentStreamId.value,
                 });
             }
         };
 
-        peerConnection.value.oniceconnectionstatechange = () => {
-            console.log('ICE Connection State:', peerConnection.value?.iceConnectionState);
+        pc.oniceconnectionstatechange = () => {
+            console.log('[WebRTC] ICE connection state:', pc.iceConnectionState);
+            if (pc.iceConnectionState === 'failed') {
+                console.log('[WebRTC] ICE connection failed, attempting restart');
+                pc.restartIce();
+            }
         };
 
-        peerConnection.value.onconnectionstatechange = () => {
-            console.log('Connection state:', peerConnection.value?.connectionState);
-            if (peerConnection.value?.connectionState === 'failed') {
-                error.value = 'Connection failed';
+        pc.onconnectionstatechange = () => {
+            console.log('[WebRTC] Connection state:', pc.connectionState);
+            if (pc.connectionState === 'failed') {
+                error.value = 'Connection failed. Please try again.';
                 cleanup();
             }
         };
 
-        // Track handling for viewers
         if (!isHost) {
-            peerConnection.value.ontrack = (event) => {
-                console.log('Received remote track:', event.streams[0]);
-                stream.value = event.streams[0];
+            pc.ontrack = (event) => {
+                console.log('[WebRTC] Received track:', event.track.kind);
+
+                if (!stream.value) {
+                    stream.value = new MediaStream();
+                }
+
+                stream.value.addTrack(event.track);
+                console.log('[WebRTC] Added track to stream:', {
+                    streamId: stream.value.id,
+                    trackKind: event.track.kind,
+                    trackId: event.track.id,
+                });
             };
         }
 
-        return peerConnection.value;
+        return pc;
     }
 
-    // Start Broadcasting
+    // Start broadcasting (host only)
     async function startBroadcasting(mediaStream: MediaStream, streamId: string) {
         try {
-            if (!peerConnection.value) {
-                initializePeerConnection();
-            }
+            currentStreamId.value = streamId;
+            const pc = createPeerConnection();
+            peerConnection.value = pc;
 
-            stream.value = mediaStream;
+            // Add all tracks from the media stream
             mediaStream.getTracks().forEach((track) => {
-                if (peerConnection.value && stream.value) {
-                    peerConnection.value.addTrack(track, stream.value);
-                }
+                console.log('[WebRTC] Adding track to peer connection:', track.kind);
+                pc.addTrack(track, mediaStream);
             });
 
-            connectSignaling(streamId);
+            stream.value = mediaStream;
+
+            // Connect to signaling server
+            await connectToSignalingServer(streamId);
         } catch (err) {
-            console.error('Error starting broadcast:', err);
+            console.error('[WebRTC] Broadcasting failed:', err);
             error.value = 'Failed to start broadcasting';
+            cleanup();
+            throw err;
         }
     }
 
-    // Join Stream as Viewer
     async function joinStream(streamId: string) {
         try {
-            if (!peerConnection.value) {
-                initializePeerConnection();
-            }
-            connectSignaling(streamId);
-        } catch (err) {
-            console.error('Error joining stream:', err);
-            error.value = 'Failed to join stream';
-        }
-    }
+            currentStreamId.value = streamId;
+            const pc = createPeerConnection();
+            peerConnection.value = pc;
 
-    async function addPendingCandidates() {
-        if (peerConnection.value?.remoteDescription) {
-            while (pendingCandidates.value.length > 0) {
-                const candidate = pendingCandidates.value.shift();
-                if (candidate) {
-                    try {
-                        await peerConnection.value.addIceCandidate(candidate);
-                    } catch (err) {
-                        console.error('Error adding pending candidate:', err);
-                    }
-                }
-            }
+            // Set up transceivers for receiving media
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+
+            await connectToSignalingServer(streamId);
+        } catch (err) {
+            console.error('[WebRTC] Failed to join stream:', err);
+            error.value = 'Failed to join stream';
+            cleanup();
+            throw err;
         }
     }
 
     // Handle incoming signaling messages
     async function handleSignalingMessage(message: SignalingMessage) {
+        if (!peerConnection.value) return;
+
         try {
             switch (message.type) {
                 case 'offer':
-                    if (!isHost && peerConnection.value) {
-                        console.log('Received offer, setting remote description');
-                        await peerConnection.value.setRemoteDescription(new RTCSessionDescription(message.data));
-                        console.log('Creating answer');
-                        const answer = await peerConnection.value.createAnswer();
-                        console.log('Setting local description');
-                        await peerConnection.value.setLocalDescription(answer);
-                        console.log('Sending answer');
-                        sendSignalingMessage({
-                            type: 'answer',
-                            data: answer,
-                            streamId: message.streamId,
-                            viewerId: message.viewerId,
-                        });
-                        await addPendingCandidates();
-                    }
+                    if (!isHost) await handleOffer(message);
                     break;
-
                 case 'answer':
-                    if (isHost && peerConnection.value && peerConnection.value.localDescription) {
-                        console.log('Received answer, setting remote description');
-                        await peerConnection.value.setRemoteDescription(new RTCSessionDescription(message.data));
-                        await addPendingCandidates();
-                    }
+                    if (isHost) await handleAnswer(message);
                     break;
-
                 case 'ice-candidate':
-                    if (peerConnection.value?.remoteDescription) {
-                        await peerConnection.value.addIceCandidate(new RTCIceCandidate(message.data));
-                    } else {
-                        pendingCandidates.value.push(new RTCIceCandidate(message.data));
-                    }
+                    await handleIceCandidate(message);
                     break;
-
                 case 'viewer-connected':
-                    if (isHost) {
-                        viewerCount.value++;
-                        console.log('Creating offer for new viewer');
-                        const offer = await peerConnection.value?.createOffer({
-                            offerToReceiveAudio: true,
-                            offerToReceiveVideo: true,
-                        });
-                        if (offer && peerConnection.value) {
-                            console.log('Setting local description');
-                            await peerConnection.value.setLocalDescription(offer);
-                            console.log('Sending offer');
-                            sendSignalingMessage({
-                                type: 'offer',
-                                data: offer,
-                                streamId: message.streamId,
-                                viewerId: message.viewerId,
-                            });
-                        }
-                    }
+                    if (isHost) await handleViewerConnected(message);
                     break;
-
                 case 'viewer-disconnected':
-                    if (isHost) {
-                        viewerCount.value = Math.max(0, viewerCount.value - 1);
-                    }
+                    if (isHost) viewerCount.value = Math.max(0, viewerCount.value - 1);
                     break;
             }
         } catch (err) {
-            console.error('Error handling signaling message:', err);
+            console.error('[WebRTC] Error handling message:', err);
             error.value = 'Connection error';
         }
     }
 
-    // Send signaling message
+    async function handleOffer(message: SignalingMessage) {
+        const pc = peerConnection.value;
+        if (!pc) return;
+
+        try {
+            const offer = new RTCSessionDescription(message.data);
+            await pc.setRemoteDescription(offer);
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            sendSignalingMessage({
+                type: 'answer',
+                data: answer,
+                streamId: message.streamId,
+                viewerId: message.viewerId,
+            });
+
+            await processPendingCandidates();
+        } catch (err) {
+            console.error('[WebRTC] Error handling offer:', err);
+            throw err;
+        }
+    }
+
+    async function handleAnswer(message: SignalingMessage) {
+        const pc = peerConnection.value;
+        if (!pc) return;
+
+        try {
+            const answer = new RTCSessionDescription(message.data);
+            await pc.setRemoteDescription(answer);
+            await processPendingCandidates();
+        } catch (err) {
+            console.error('[WebRTC] Error handling answer:', err);
+            throw err;
+        }
+    }
+
+    async function handleIceCandidate(message: SignalingMessage) {
+        const pc = peerConnection.value;
+        if (!pc) return;
+
+        try {
+            const candidate = new RTCIceCandidate(message.data);
+            if (pc.remoteDescription) {
+                await pc.addIceCandidate(candidate);
+            } else {
+                pendingCandidates.value.push(candidate);
+            }
+        } catch (err) {
+            console.error('[WebRTC] Error handling ICE candidate:', err);
+            throw err;
+        }
+    }
+
+    async function handleViewerConnected(message: SignalingMessage) {
+        if (!peerConnection.value) return;
+
+        viewerCount.value++;
+        console.log('[WebRTC] Viewer connected, creating offer');
+
+        try {
+            if (isHost && stream.value) {
+                // Ensure stream tracks are added
+                stream.value.getTracks().forEach((track) => {
+                    const sender = peerConnection.value?.getSenders().find((s) => s.track?.kind === track.kind);
+
+                    if (!sender) {
+                        console.log('[WebRTC] Adding track to peer connection:', track.kind);
+                        peerConnection.value?.addTrack(track, stream.value!);
+                    }
+                });
+
+                // Create offer with explicit media direction
+                const offer = await peerConnection.value.createOffer({
+                    offerToReceiveAudio: false, // We're sending only
+                    offerToReceiveVideo: false, // We're sending only
+                });
+
+                console.log('[WebRTC] Created offer:', {
+                    type: offer.type,
+                    hasAudio: offer.sdp?.includes('m=audio'),
+                    hasVideo: offer.sdp?.includes('m=video'),
+                });
+
+                // Set local description
+                await peerConnection.value.setLocalDescription(offer);
+
+                // Send offer to viewer
+                sendSignalingMessage({
+                    type: 'offer',
+                    data: offer,
+                    streamId: message.streamId,
+                    viewerId: message.viewerId,
+                });
+            }
+        } catch (err) {
+            console.error('[WebRTC] Error creating offer:', err);
+            error.value = 'Failed to create offer';
+        }
+    }
+
+    async function processPendingCandidates() {
+        const pc = peerConnection.value;
+        if (!pc?.remoteDescription) return;
+
+        while (pendingCandidates.value.length > 0) {
+            const candidate = pendingCandidates.value.shift();
+            if (candidate) {
+                try {
+                    await pc.addIceCandidate(candidate);
+                } catch (err) {
+                    console.error('[WebRTC] Error adding ICE candidate:', err);
+                }
+            }
+        }
+    }
+
     function sendSignalingMessage(message: SignalingMessage) {
-        if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+        if (socket.value?.readyState === WebSocket.OPEN) {
             socket.value.send(JSON.stringify(message));
         }
     }
 
-    // Cleanup function
     function cleanup() {
         if (peerConnection.value) {
             peerConnection.value.close();
             peerConnection.value = null;
         }
+
         if (socket.value) {
             socket.value.close();
             socket.value = null;
         }
-        if (stream.value) {
+
+        if (stream.value && isHost) {
             stream.value.getTracks().forEach((track) => track.stop());
             stream.value = null;
         }
+
         isConnected.value = false;
         pendingCandidates.value = [];
+        error.value = null;
+        currentStreamId.value = '';
+        reconnectAttempts.value = 0;
     }
 
-    // Cleanup on component unmount
     onUnmounted(() => {
         cleanup();
     });

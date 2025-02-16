@@ -1,39 +1,15 @@
-<script lang="ts" setup>
-interface User {
-    id: string;
-    username: string;
-}
+<script setup lang="ts">
+import { useChat } from '@/composables/useChat';
+import { ref, watch } from 'vue';
 
-interface ChatMessage {
-    id: string;
-    userId: string;
-    username: string;
-    content: string;
-    timestamp: Date;
-}
+const props = defineProps<{
+    streamId: string;
+}>();
 
-// State
-const messages = ref<ChatMessage[]>([]);
-const newMessage = ref('');
-const isConnected = ref(false);
-const connectedUsers = ref(0);
-const systemMessage = ref<string | null>(null);
 const messagesContainerRef = ref<HTMLElement | null>(null);
+const newMessage = ref('');
 
-// Generate a random user for demo purposes
-// In a real app, this would come from authentication
-const currentUser = ref<User>({
-    id: Math.random().toString(36).substr(2, 9),
-    username: `User${Math.floor(Math.random() * 1000)}`,
-});
-
-// Format timestamp to local time
-function formatTime(date: Date): string {
-    return new Date(date).toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
+const { messages, isConnected, connectedUsers, systemMessage, currentUser, sendMessage, formatTimestamp } = useChat(props.streamId);
 
 // Scroll to bottom of messages
 function scrollToBottom() {
@@ -44,58 +20,16 @@ function scrollToBottom() {
     });
 }
 
-// Send message
-function sendMessage() {
+// Handle message submission
+function handleSendMessage() {
     const content = newMessage.value.trim();
     if (!content || !isConnected.value) return;
 
-    const message: ChatMessage = {
-        id: Math.random().toString(36).substr(2, 9),
-        userId: currentUser.value.id,
-        username: currentUser.value.username,
-        content,
-        timestamp: new Date(),
-    };
-
-    // In a real app, you would emit this to your WebSocket/WebRTC connection
-    messages.value.push(message);
-    newMessage.value = '';
-    scrollToBottom();
+    if (sendMessage(content)) {
+        newMessage.value = '';
+        scrollToBottom();
+    }
 }
-
-// Mock connection status for demo
-// Replace with actual WebSocket/WebRTC connection logic
-onMounted(() => {
-    isConnected.value = true;
-    connectedUsers.value = 1;
-    systemMessage.value = 'Connected to chat';
-
-    // Add some sample messages
-    messages.value = [
-        {
-            id: '1',
-            userId: 'system',
-            username: 'System',
-            content: 'Welcome to the chat!',
-            timestamp: new Date(),
-        },
-        {
-            id: '2',
-            userId: 'other',
-            username: 'John',
-            content: 'Hello everyone!',
-            timestamp: new Date(),
-        },
-    ];
-
-    scrollToBottom();
-});
-
-// Clean up
-onBeforeUnmount(() => {
-    isConnected.value = false;
-    systemMessage.value = 'Disconnected from chat';
-});
 
 // Watch for new messages to scroll
 watch(
@@ -131,7 +65,20 @@ watch(
                 :key="message.id"
                 class="mb-4"
             >
-                <div :class="['flex items-start', message.userId === currentUser.id ? 'flex-row-reverse' : '']">
+                <!-- System Message -->
+                <div
+                    v-if="message.type === 'system'"
+                    class="text-center text-sm text-gray-500 my-2"
+                >
+                    <span class="font-medium">{{ message.username }}</span>
+                    {{ message.content }}
+                </div>
+
+                <!-- Chat Message -->
+                <div
+                    v-else
+                    :class="['flex items-start', message.userId === currentUser.id ? 'flex-row-reverse' : '']"
+                >
                     <!-- User Avatar -->
                     <div class="flex-shrink-0">
                         <div
@@ -154,7 +101,7 @@ watch(
                                 {{ message.username }}
                             </span>
                             <span class="text-xs opacity-70">
-                                {{ formatTime(message.timestamp) }}
+                                {{ formatTimestamp(message.timestamp) }}
                             </span>
                         </div>
                         <p :class="['break-words', message.userId === currentUser.id ? 'text-white' : 'text-gray-800']">
@@ -177,14 +124,14 @@ watch(
         <div class="p-4 border-t">
             <form
                 class="flex gap-2"
-                @submit.prevent="sendMessage"
+                @submit.prevent="handleSendMessage"
             >
                 <SharedBaseInput
                     v-model="newMessage"
                     type="text"
                     placeholder="Type a message..."
                     :disabled="!isConnected"
-                    @keydown.enter.prevent="sendMessage"
+                    @keydown.enter.prevent="handleSendMessage"
                 />
                 <SharedBaseButton
                     type="submit"

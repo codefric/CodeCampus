@@ -1,19 +1,25 @@
-<script lang="ts" setup>
+# components/StreamBroadcaster.vue
+<script setup lang="ts">
 const localVideoRef = ref<HTMLVideoElement | null>(null);
 const isCameraActive = ref(false);
 const isScreenSharing = ref(false);
 const isLive = ref(false);
 const localStream = ref<MediaStream | null>(null);
+const streamError = ref<string | null>(null);
 
-const { startBroadcasting, cleanup, isConnected, error, viewerCount } = useWebRTC(true);
+const { startBroadcasting, cleanup, isConnected, viewerCount } = useWebRTC(true);
+
+const streamId = ref(generateStreamId());
+const debugState = reactive({
+    lastMediaStream: null as any,
+    lastError: null as any,
+    mediaStreamAttempts: 0,
+});
 
 const streamUrl = computed(() => {
     if (!isLive.value) return '';
-    // Replace with your actual domain
     return `${window.location.origin}/watch/${streamId.value}`;
 });
-
-const streamId = ref(generateStreamId());
 
 function generateStreamId() {
     return Math.random().toString(36).substring(2, 15);
@@ -25,17 +31,36 @@ async function toggleCamera() {
             stopMediaStream();
             isCameraActive.value = false;
         } else {
+            debugState.mediaStreamAttempts++;
+            console.log('[Broadcaster] Requesting camera access');
+
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30 },
+                },
                 audio: true,
             });
+
+            console.log('[Broadcaster] Camera access granted:', {
+                tracks: stream.getTracks().map((t) => ({
+                    kind: t.kind,
+                    enabled: t.enabled,
+                    muted: t.muted,
+                    settings: t.getSettings(),
+                })),
+            });
+
             startMediaStream(stream);
             isCameraActive.value = true;
             isScreenSharing.value = false;
+            streamError.value = null;
         }
     } catch (error) {
-        console.error('Error accessing camera:', error);
-        alert('Error accessing camera. Please check permissions.');
+        console.error('[Broadcaster] Camera access error:', error);
+        streamError.value = 'Error accessing camera. Please check permissions.';
+        debugState.lastError = error;
     }
 }
 
@@ -45,30 +70,81 @@ async function toggleScreenShare() {
             stopMediaStream();
             isScreenSharing.value = false;
         } else {
+            debugState.mediaStreamAttempts++;
+            console.log('[Broadcaster] Requesting screen share');
+
             const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: true,
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30 },
+                },
                 audio: true,
             });
+
+            console.log('[Broadcaster] Screen share granted:', {
+                tracks: stream.getTracks().map((t) => ({
+                    kind: t.kind,
+                    enabled: t.enabled,
+                    muted: t.muted,
+                    settings: t.getSettings(),
+                })),
+            });
+
             startMediaStream(stream);
             isScreenSharing.value = true;
             isCameraActive.value = false;
+            streamError.value = null;
         }
     } catch (error) {
-        console.error('Error sharing screen:', error);
-        alert('Error sharing screen. Please try again.');
+        console.error('[Broadcaster] Screen share error:', error);
+        streamError.value = 'Error sharing screen. Please try again.';
+        debugState.lastError = error;
     }
 }
 
 function startMediaStream(stream: MediaStream) {
+    console.log('[Broadcaster] Starting media stream:', {
+        tracks: stream.getTracks().map((t) => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            muted: t.muted,
+        })),
+    });
+
+    debugState.lastMediaStream = {
+        id: stream.id,
+        tracks: stream.getTracks().map((t) => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            muted: t.muted,
+            settings: t.getSettings(),
+        })),
+    };
+
     if (localVideoRef.value) {
         localVideoRef.value.srcObject = stream;
         localStream.value = stream;
+
+        // Monitor track endings
+        stream.getTracks().forEach((track) => {
+            track.onended = () => {
+                console.log('[Broadcaster] Track ended:', track.kind);
+                if (isLive.value) {
+                    stopBroadcast();
+                }
+            };
+        });
     }
 }
 
 function stopMediaStream() {
+    console.log('[Broadcaster] Stopping media stream');
     if (localStream.value) {
-        localStream.value.getTracks().forEach((track) => track.stop());
+        localStream.value.getTracks().forEach((track) => {
+            track.stop();
+            console.log('[Broadcaster] Stopped track:', track.kind);
+        });
         localStream.value = null;
     }
     if (localVideoRef.value) {
@@ -76,36 +152,49 @@ function stopMediaStream() {
     }
 }
 
-function toggleStream() {
-    if (!localStream.value) {
-        alert('Please start your camera or screen share first.');
-        return;
-    }
-
-    isLive.value = !isLive.value;
-    if (isLive.value) {
-        startBroadcast();
-    } else {
-        stopBroadcast();
-    }
-}
-
 async function startBroadcast() {
     if (!localStream.value) {
-        alert('Please start your camera or screen share first.');
+        streamError.value = 'Please start your camera or screen share first.';
         return;
     }
 
     try {
+        console.log('[Broadcaster] Starting broadcast with stream:', {
+            id: localStream.value.id,
+            tracks: localStream.value.getTracks().map((t) => ({
+                kind: t.kind,
+                enabled: t.enabled,
+                muted: t.muted,
+                settings: t.getSettings(),
+            })),
+        });
+
         await startBroadcasting(localStream.value, streamId.value);
         isLive.value = true;
+        streamError.value = null;
     } catch (err) {
-        console.error('Error starting broadcast:', err);
-        alert('Failed to start broadcast. Please try again.');
+        console.error('[Broadcaster] Broadcast error:', err);
+        streamError.value = 'Failed to start broadcast. Please try again.';
+        debugState.lastError = err;
+        isLive.value = false;
+    }
+}
+
+function toggleStream() {
+    if (!localStream.value) {
+        streamError.value = 'Please start your camera or screen share first.';
+        return;
+    }
+
+    if (isLive.value) {
+        stopBroadcast();
+    } else {
+        startBroadcast();
     }
 }
 
 function stopBroadcast() {
+    console.log('[Broadcaster] Stopping broadcast');
     cleanup();
     isLive.value = false;
 }
@@ -113,24 +202,39 @@ function stopBroadcast() {
 function copyStreamUrl() {
     navigator.clipboard
         .writeText(streamUrl.value)
-        .then(() => alert('Stream URL copied to clipboard!'))
-        .catch((err) => console.error('Error copying URL:', err));
+        .then(() => {
+            console.log('[Broadcaster] Stream URL copied:', streamUrl.value);
+        })
+        .catch((err) => {
+            console.error('[Broadcaster] Error copying URL:', err);
+            streamError.value = 'Failed to copy stream URL';
+        });
 }
 
-// Clean up on component unmount
+// Debug helper
+const getDebugInfo = () => {
+    return {
+        isLive: isLive.value,
+        isConnected: isConnected.value,
+        viewerCount: viewerCount.value,
+        hasLocalStream: !!localStream.value,
+        streamTracks: localStream.value?.getTracks().length || 0,
+        debugState,
+    };
+};
+
+// Make debug info available in Vue DevTools
+defineExpose({
+    getDebugInfo,
+});
+
 onBeforeUnmount(() => {
+    console.log('[Broadcaster] Unmounting, final state:', getDebugInfo());
     stopMediaStream();
     if (isLive.value) {
         stopBroadcast();
     }
 });
-
-watch(
-    () => error.value,
-    (err) => {
-        if (err) console.log(err);
-    }
-);
 </script>
 
 <template>
@@ -150,10 +254,19 @@ watch(
                         />
                     </div>
 
+                    <!-- Error Message -->
+                    <div
+                        v-if="streamError"
+                        class="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200"
+                    >
+                        {{ streamError }}
+                    </div>
+
                     <!-- Controls -->
                     <div class="flex flex-wrap gap-4">
                         <SharedBaseButton
                             state="semi-filled"
+                            :disabled="isLive"
                             @click="toggleCamera"
                         >
                             {{ isCameraActive ? 'Stop Camera' : 'Start Camera' }}
@@ -161,6 +274,7 @@ watch(
 
                         <SharedBaseButton
                             state="semi-filled"
+                            :disabled="isLive"
                             @click="toggleScreenShare"
                         >
                             {{ isScreenSharing ? 'Stop Sharing' : 'Share Screen' }}
@@ -168,6 +282,7 @@ watch(
 
                         <SharedBaseButton
                             state="semi-filled"
+                            :disabled="!localStream"
                             @click="toggleStream"
                         >
                             {{ isLive ? 'End Stream' : 'Go Live' }}
@@ -193,8 +308,8 @@ watch(
                             >
                                 Copy
                             </SharedBaseButton>
-                            <SharedBaseChip :label="`${isConnected}`" />
-                            <SharedBaseChip :label="`${viewerCount}`" />
+                            <SharedBaseChip :label="`Connected: ${isConnected}`" />
+                            <SharedBaseChip :label="`Viewers: ${viewerCount}`" />
                         </div>
                     </div>
                 </div>
@@ -202,7 +317,7 @@ watch(
 
             <!-- Chat Section -->
             <div class="lg:col-span-1">
-                <SharedChatBox />
+                <SharedChatBox :stream-id="streamId" />
             </div>
         </div>
     </div>
