@@ -14,7 +14,7 @@ const streamId = route.params.id as string;
 
             <!-- Chat Section -->
             <div class="lg:col-span-1">
-                <SharedChatBox :stream-id="streamId" />
+                <!-- <SharedChatBox :stream-id="streamId" /> -->
             </div>
         </div>
     </div>

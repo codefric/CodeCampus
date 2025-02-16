@@ -1,3 +1,4 @@
+// composables/useChat.ts
 export interface User {
     id: string;
     username: string;
@@ -12,16 +13,7 @@ export interface ChatMessage {
     type: 'chat' | 'system';
 }
 
-export interface ChatState {
-    messages: ChatMessage[];
-    isConnected: boolean;
-    connectedUsers: number;
-    systemMessage: string | null;
-    currentUser: User;
-}
-
 export function useChat(streamId: string) {
-    // State
     const messages = ref<ChatMessage[]>([]);
     const isConnected = ref(false);
     const connectedUsers = ref(0);
@@ -32,27 +24,27 @@ export function useChat(streamId: string) {
     const RECONNECT_INTERVAL = 3000;
 
     // Generate a random user for demo purposes
-    // In a real app, this would come from authentication
     const currentUser = ref<User>({
         id: Math.random().toString(36).substr(2, 9),
         username: `User${Math.floor(Math.random() * 1000)}`,
     });
 
-    // Connect to WebSocket
     function connect() {
         if (socket.value?.readyState === WebSocket.OPEN) return;
 
-        const wsUrl = `${import.meta.env.VITE_WS_URL}/chat/${streamId}`;
-        socket.value = new WebSocket(wsUrl);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.hostname}:34567/chat/${streamId}`;
+        console.log('[Chat] Connecting to:', wsUrl);
 
+        socket.value = new WebSocket(wsUrl);
         socket.value.onopen = handleConnect;
         socket.value.onmessage = handleMessage;
         socket.value.onclose = handleDisconnect;
         socket.value.onerror = handleError;
     }
 
-    // Handle WebSocket connection
     function handleConnect() {
+        console.log('[Chat] Connected successfully');
         isConnected.value = true;
         systemMessage.value = 'Connected to chat';
         reconnectAttempts.value = 0;
@@ -61,16 +53,17 @@ export function useChat(streamId: string) {
         sendSystemMessage('joined the chat');
     }
 
-    // Handle incoming messages
     function handleMessage(event: MessageEvent) {
         try {
             const data = JSON.parse(event.data);
+            console.log('[Chat] Received message:', data);
 
             switch (data.type) {
                 case 'chat':
                 case 'system':
                     messages.value.push({
                         ...data,
+                        id: Math.random().toString(36).substr(2, 9),
                         timestamp: new Date(data.timestamp),
                     });
                     break;
@@ -80,19 +73,18 @@ export function useChat(streamId: string) {
                     break;
 
                 default:
-                    console.warn('Unknown message type:', data.type);
+                    console.warn('[Chat] Unknown message type:', data.type);
             }
         } catch (err) {
-            console.error('Error parsing message:', err);
+            console.error('[Chat] Error parsing message:', err);
         }
     }
 
-    // Handle WebSocket disconnection
     function handleDisconnect() {
+        console.log('[Chat] Disconnected');
         isConnected.value = false;
         systemMessage.value = 'Disconnected from chat';
 
-        // Attempt to reconnect if not at max attempts
         if (reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts.value++;
             setTimeout(connect, RECONNECT_INTERVAL);
@@ -102,17 +94,16 @@ export function useChat(streamId: string) {
         }
     }
 
-    // Handle WebSocket errors
     function handleError(error: Event) {
-        console.error('WebSocket error:', error);
+        console.error('[Chat] WebSocket error:', error);
         systemMessage.value = 'Connection error occurred';
     }
 
-    // Send a chat message
     function sendMessage(content: string) {
         if (!isConnected.value || !content.trim()) return false;
 
         const message = {
+            id: Math.random().toString(36).substr(2, 9),
             userId: currentUser.value.id,
             username: currentUser.value.username,
             content: content.trim(),
@@ -125,16 +116,16 @@ export function useChat(streamId: string) {
             socket.value?.send(JSON.stringify(message));
             return true;
         } catch (err) {
-            console.error('Error sending message:', err);
+            console.error('[Chat] Error sending message:', err);
             return false;
         }
     }
 
-    // Send a system message
     function sendSystemMessage(content: string) {
         if (!isConnected.value) return false;
 
         const message = {
+            id: Math.random().toString(36).substr(2, 9),
             userId: currentUser.value.id,
             username: currentUser.value.username,
             content,
@@ -147,23 +138,20 @@ export function useChat(streamId: string) {
             socket.value?.send(JSON.stringify(message));
             return true;
         } catch (err) {
-            console.error('Error sending system message:', err);
+            console.error('[Chat] Error sending system message:', err);
             return false;
         }
     }
 
-    // Clean up function
     function cleanup() {
         if (socket.value) {
-            // Send leave message before disconnecting
-            sendSystemMessage('left the chat');
-
-            // Close socket
+            if (socket.value.readyState === WebSocket.OPEN) {
+                sendSystemMessage('left the chat');
+            }
             socket.value.close();
             socket.value = null;
         }
 
-        // Reset state
         messages.value = [];
         isConnected.value = false;
         connectedUsers.value = 0;
@@ -171,17 +159,6 @@ export function useChat(streamId: string) {
         reconnectAttempts.value = 0;
     }
 
-    // Initialize on mount
-    onMounted(() => {
-        connect();
-    });
-
-    // Cleanup on unmount
-    onBeforeUnmount(() => {
-        cleanup();
-    });
-
-    // Format timestamp helper
     function formatTimestamp(date: Date): string {
         return date.toLocaleTimeString(undefined, {
             hour: '2-digit',
@@ -189,22 +166,24 @@ export function useChat(streamId: string) {
         });
     }
 
-    // Return composable state and methods
+    onMounted(() => {
+        connect();
+    });
+
+    onBeforeUnmount(() => {
+        cleanup();
+    });
+
     return {
-        // State
         messages,
         isConnected,
         connectedUsers,
         systemMessage,
         currentUser,
-
-        // Methods
         sendMessage,
         sendSystemMessage,
         formatTimestamp,
         cleanup,
-
-        // Advanced methods for custom implementations
         connect,
         disconnect: cleanup,
     };

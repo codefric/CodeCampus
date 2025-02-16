@@ -6,7 +6,6 @@ interface SignalingMessage {
     viewerId?: string;
 }
 
-// Base WebRTC configuration with multiple STUN servers for redundancy
 const RTC_CONFIG: RTCConfiguration = {
     iceServers: [
         { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
@@ -29,9 +28,14 @@ export function useWebRTC(isHost: boolean = false) {
     const currentStreamId = ref<string>('');
     const reconnectAttempts = ref(0);
     const maxReconnectAttempts = 3;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
-    // WebSocket connection with timeout and reconnection
     async function connectToSignalingServer(streamId: string): Promise<void> {
+        if (socket.value?.readyState === WebSocket.OPEN) {
+            console.log('[WebSocket] Already connected');
+            return;
+        }
+
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${window.location.hostname}:34567/ws?streamId=${streamId}`;
         console.log('[WebSocket] Connecting to:', wsUrl);
@@ -41,13 +45,14 @@ export function useWebRTC(isHost: boolean = false) {
                 const ws = new WebSocket(wsUrl);
                 socket.value = ws;
 
-                const timeout = setTimeout(() => {
+                const connectionTimeout = setTimeout(() => {
+                    console.log('[WebSocket] Connection timeout');
                     ws.close();
                     reject(new Error('WebSocket connection timeout'));
                 }, 10000);
 
                 ws.onopen = () => {
-                    clearTimeout(timeout);
+                    clearTimeout(connectionTimeout);
                     console.log('[WebSocket] Connected successfully');
                     isConnected.value = true;
                     reconnectAttempts.value = 0;
@@ -66,7 +71,9 @@ export function useWebRTC(isHost: boolean = false) {
                     try {
                         const message: SignalingMessage = JSON.parse(event.data);
                         console.log('[WebSocket] Received message:', message);
-                        handleSignalingMessage(message);
+                        handleSignalingMessage(message).catch((err) => {
+                            console.error('[WebSocket] Error handling message:', err);
+                        });
                     } catch (err) {
                         console.error('[WebSocket] Message parsing error:', err);
                     }
@@ -74,11 +81,12 @@ export function useWebRTC(isHost: boolean = false) {
 
                 ws.onerror = (event) => {
                     console.error('[WebSocket] Error:', event);
-                    error.value = 'WebSocket connection failed';
-                    reject(new Error('WebSocket connection failed'));
+                    clearTimeout(connectionTimeout);
+                    error.value = 'WebSocket connection error';
+                    ws.close();
                 };
 
-                ws.onclose = async (event) => {
+                ws.onclose = (event) => {
                     console.log('[WebSocket] Connection closed:', {
                         code: event.code,
                         reason: event.reason,
@@ -86,11 +94,20 @@ export function useWebRTC(isHost: boolean = false) {
                     });
                     isConnected.value = false;
 
+                    // Clear any existing reconnect timeout
+                    if (reconnectTimeout) {
+                        clearTimeout(reconnectTimeout);
+                        reconnectTimeout = null;
+                    }
+
+                    // Attempt reconnection if needed
                     if (reconnectAttempts.value < maxReconnectAttempts) {
                         console.log(`[WebSocket] Attempting to reconnect (${reconnectAttempts.value + 1}/${maxReconnectAttempts})`);
                         reconnectAttempts.value++;
-                        await new Promise((r) => setTimeout(r, 2000 * reconnectAttempts.value));
-                        connectToSignalingServer(streamId).catch(console.error);
+
+                        reconnectTimeout = setTimeout(() => {
+                            connectToSignalingServer(streamId).catch(console.error);
+                        }, 2000 * reconnectAttempts.value);
                     } else {
                         error.value = 'Connection lost. Please refresh the page.';
                         cleanup();
@@ -102,9 +119,9 @@ export function useWebRTC(isHost: boolean = false) {
         });
     }
 
-    // Initialize WebRTC peer connection with comprehensive logging
     function createPeerConnection(): RTCPeerConnection {
         const pc = new RTCPeerConnection(RTC_CONFIG);
+        console.log('[WebRTC] Creating peer connection with config:', RTC_CONFIG);
 
         pc.onicecandidate = ({ candidate }) => {
             if (candidate) {
@@ -126,27 +143,40 @@ export function useWebRTC(isHost: boolean = false) {
         };
 
         pc.onconnectionstatechange = () => {
-            console.log('[WebRTC] Connection state:', pc.connectionState);
-            if (pc.connectionState === 'failed') {
-                error.value = 'Connection failed. Please try again.';
-                cleanup();
+            const state = pc.connectionState;
+            console.log('[WebRTC] Connection state changed:', state);
+
+            switch (state) {
+                case 'connected':
+                    console.log('[WebRTC] Connection established successfully');
+                    break;
+                case 'disconnected':
+                    console.log('[WebRTC] Connection disconnected, attempting to recover');
+                    break;
+                case 'failed':
+                    console.log('[WebRTC] Connection failed');
+                    error.value = 'Connection failed. Please try again.';
+                    cleanup();
+                    break;
+                case 'closed':
+                    console.log('[WebRTC] Connection closed');
+                    break;
             }
         };
 
         if (!isHost) {
             pc.ontrack = (event) => {
-                console.log('[WebRTC] Received track:', event.track.kind);
+                console.log('[WebRTC] Received track:', {
+                    kind: event.track.kind,
+                    id: event.track.id,
+                    label: event.track.label,
+                });
 
                 if (!stream.value) {
                     stream.value = new MediaStream();
                 }
 
                 stream.value.addTrack(event.track);
-                console.log('[WebRTC] Added track to stream:', {
-                    streamId: stream.value.id,
-                    trackKind: event.track.kind,
-                    trackId: event.track.id,
-                });
             };
         }
 
@@ -230,10 +260,22 @@ export function useWebRTC(isHost: boolean = false) {
         if (!pc) return;
 
         try {
-            const offer = new RTCSessionDescription(message.data);
-            await pc.setRemoteDescription(offer);
+            console.log('[WebRTC] Handling offer, current signaling state:', pc.signalingState);
 
+            // If we're not in stable state, we need to handle rollback
+            if (pc.signalingState !== 'stable') {
+                console.log('[WebRTC] Signaling state not stable, rolling back');
+                await Promise.all([
+                    pc.setLocalDescription({ type: 'rollback' }),
+                    pc.setRemoteDescription(new RTCSessionDescription(message.data)),
+                ]);
+            } else {
+                await pc.setRemoteDescription(new RTCSessionDescription(message.data));
+            }
+
+            console.log('[WebRTC] Creating answer');
             const answer = await pc.createAnswer();
+            console.log('[WebRTC] Setting local description');
             await pc.setLocalDescription(answer);
 
             sendSignalingMessage({
@@ -288,33 +330,23 @@ export function useWebRTC(isHost: boolean = false) {
         console.log('[WebRTC] Viewer connected, creating offer');
 
         try {
+            // Only create offer if we're the host and have a stream
             if (isHost && stream.value) {
-                // Ensure stream tracks are added
-                stream.value.getTracks().forEach((track) => {
-                    const sender = peerConnection.value?.getSenders().find((s) => s.track?.kind === track.kind);
+                // Wait for signaling state to be stable
+                if (peerConnection.value.signalingState !== 'stable') {
+                    console.log('[WebRTC] Waiting for signaling state to stabilize');
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                }
 
-                    if (!sender) {
-                        console.log('[WebRTC] Adding track to peer connection:', track.kind);
-                        peerConnection.value?.addTrack(track, stream.value!);
-                    }
-                });
+                console.log('[WebRTC] Creating offer, current signaling state:', peerConnection.value.signalingState);
 
-                // Create offer with explicit media direction
                 const offer = await peerConnection.value.createOffer({
-                    offerToReceiveAudio: false, // We're sending only
-                    offerToReceiveVideo: false, // We're sending only
+                    offerToReceiveAudio: false,
+                    offerToReceiveVideo: false,
                 });
 
-                console.log('[WebRTC] Created offer:', {
-                    type: offer.type,
-                    hasAudio: offer.sdp?.includes('m=audio'),
-                    hasVideo: offer.sdp?.includes('m=video'),
-                });
-
-                // Set local description
                 await peerConnection.value.setLocalDescription(offer);
 
-                // Send offer to viewer
                 sendSignalingMessage({
                     type: 'offer',
                     data: offer,
@@ -351,18 +383,30 @@ export function useWebRTC(isHost: boolean = false) {
     }
 
     function cleanup() {
+        console.log('[WebRTC] Cleaning up resources');
+
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+
         if (peerConnection.value) {
             peerConnection.value.close();
             peerConnection.value = null;
         }
 
         if (socket.value) {
-            socket.value.close();
+            if (socket.value.readyState === WebSocket.OPEN) {
+                socket.value.close();
+            }
             socket.value = null;
         }
 
         if (stream.value && isHost) {
-            stream.value.getTracks().forEach((track) => track.stop());
+            stream.value.getTracks().forEach((track) => {
+                track.stop();
+                console.log('[WebRTC] Stopped track:', track.kind);
+            });
             stream.value = null;
         }
 
