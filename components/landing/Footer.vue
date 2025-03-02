@@ -1,8 +1,10 @@
 <script setup lang="ts"></script>
 
 <template>
-    <div class="w-full font-arial text-sm font-normal text-center normal-case text-[#333333] bg-[#F5F6F9] p-10">
-        <div class="flex items-center justify-between">
+    <div
+        class="w-full font-arial text-sm font-normal text-center flex items-center justify-center normal-case text-[#333333] bg-[#F5F6F9] p-10"
+    >
+        <div class="container flex items-center justify-between">
             <!-- Company Logo and Social Links -->
             <div class="text-left">
                 <div class="font-bold text-lg mb-4">A C M E</div>
