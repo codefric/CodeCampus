@@ -79,7 +79,7 @@
             </div>
 
             <!-- Navigation Links -->
-            <div class="grid grid-cols-3 gap-4 text-left">
+            <div class="grid grid-cols-3 gap-8 text-left">
                 <!-- Quick Links Column -->
                 <div>
                     <h3 class="font-semibold mb-4">Quick Links</h3>
@@ -89,19 +89,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Home
                             </a>
                         </li>
@@ -110,19 +97,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Consultancy
                             </a>
                         </li>
@@ -131,19 +105,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Career
                             </a>
                         </li>
@@ -152,19 +113,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Courses
                             </a>
                         </li>
@@ -180,19 +128,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 React Native
                             </a>
                         </li>
@@ -201,19 +136,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Angular Js
                             </a>
                         </li>
@@ -222,19 +144,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Javascript
                             </a>
                         </li>
@@ -243,19 +152,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Node Js
                             </a>
                         </li>
@@ -264,19 +160,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 C++
                             </a>
                         </li>
@@ -292,19 +175,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Web Development
                             </a>
                         </li>
@@ -313,19 +183,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Web Design
                             </a>
                         </li>
@@ -334,19 +191,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Graphic Design
                             </a>
                         </li>
@@ -355,19 +199,6 @@
                                 href="#"
                                 class="text-gray-500 hover:text-gray-700 flex items-center"
                             >
-                                <svg
-                                    class="w-3 h-3 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                    />
-                                </svg>
                                 Life Skills
                             </a>
                         </li>
