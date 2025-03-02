@@ -11,6 +11,9 @@ export default {
         './nuxt.config.{js,ts}',
         './content/**/*.md',
     ],
+    fontFamily: {
+        nunito: ['Nunito', 'sans-serif'],
+    },
     theme: {
         extend: {
             typography: {

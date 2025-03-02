@@ -15,6 +15,7 @@ interface Props {
     innerClassName?: string;
     textClass?: string;
     active?: boolean;
+    rounded?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
     innerClassName: '',
     textClass: '',
     active: false,
+    rounded: false,
 });
 
 defineEmits<{
@@ -57,40 +59,51 @@ const iconSizeClass = computed(() => {
     return sizes[props.size];
 });
 
-const stateClasses = computed(() => ({
-    'inline-flex items-center justify-center rounded-xl font-medium transition-all text-[14px] font-semibold': true,
+const stateClasses = computed(() => {
+    // Base classes for all states
+    const baseClasses = 'inline-flex items-center justify-center font-medium transition-all text-sm font-semibold font-nunito';
+    const roundedClasses = props.rounded ? 'rounded-full' : 'rounded-[4px]';
 
-    // Default state with active
-    'border border-transparent bg-white hover:!border-[#DCFAE6] hover:!bg-[#ECFDF3] active:!bg-[#DCFAE6] active:!border-[#ABEFC6]':
-        props.state === 'default' && !props.error && !props.active,
-    'border border-[#ABEFC6] bg-[#DCFAE6]': props.state === 'default' && !props.error && props.active,
+    // Common active class for multiple states
+    const activeClass = 'border border-[#3A2A56] bg-[#3A2A56] text-white';
 
-    // Semi-filled state with active
-    'border border-[#D5D7DA] bg-gradient-to-b from-white to-[#FAFAFA] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] hover:border-[#75E0A7] hover:bg-gradient-to-b hover:from-white hover:to-[#ECFDF3] hover:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] active:border-[#47CD89] active:bg-gradient-to-b active:from-[#DCFAE6] active:to-[#ABEFC6] active:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'semi-filled' && !props.error && !props.active,
-    'border border-[#47CD89] bg-gradient-to-b from-[#DCFAE6] to-[#ABEFC6] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'semi-filled' && !props.error && props.active,
+    // Select the appropriate class based on state, error, and active
+    let stateClass = '';
 
-    // Filled state with active
-    'border border-[#47CD89] bg-gradient-to-b from-[#DCFAE6] to-[#ABEFC6] shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] hover:border-[#47CD89] hover:bg-gradient-to-b hover:from-[#ABEFC6] hover:to-[#75E0A7] hover:shadow-[0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)] active:border-[#47CD89] active:bg-gradient-to-b active:from-[#75E0A7] active:to-[#47CD89] active:shadow-[0px_20px_0px_0px_rgba(255,255,255,0.05)_inset,0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'filled' && !props.error && !props.active,
-    'border border-[#47CD89] bg-gradient-to-b from-[#75E0A7] to-[#47CD89] shadow-[0px_20px_0px_0px_rgba(255,255,255,0.05)_inset,0px_-1px_2px_rgba(0,0,0,0.05)_inset,0px_1px_2px_rgba(0,0,0,0.05)]':
-        props.state === 'filled' && !props.error && props.active,
+    if (props.error) {
+        stateClass =
+            'border border-[#3A2A56] bg-white text-[#3A2A56] hover:bg-[#3A2A56] hover:text-white active:bg-[#3A2A56] active:text-white';
+    } else if (props.disabled || props.isLoading) {
+        stateClass = 'bg-white opacity-50 cursor-not-allowed !border-[#3A2A56] !text-[#3A2A56]';
+    } else if (props.active) {
+        // Different active states
+        if (props.state === 'default') {
+            stateClass = activeClass;
+        } else if (props.state === 'semi-filled') {
+            stateClass = activeClass;
+        } else if (props.state === 'filled') {
+            stateClass = activeClass;
+        } else if (props.state === 'outline') {
+            stateClass = activeClass;
+        }
+    } else {
+        // Default states (not active)
+        if (props.state === 'default') {
+            stateClass =
+                'border border-transparent bg-white text-[#3B2A56] hover:!border-[#3A2A56] hover:!bg-white active:!bg-[#3A2A56] active:!border-[#3A2A56] active:!text-white';
+        } else if (props.state === 'semi-filled') {
+            stateClass =
+                'border border-[#3A2A56] bg-white text-[#3B2A56] hover:border-[#3A2A56] hover:bg-white active:bg-[#3A2A56] active:text-white';
+        } else if (props.state === 'filled') {
+            stateClass =
+                'border border-[#3A2A56] bg-[#3A2A56] text-white hover:border-[#3A2A56] hover:bg-[#3A2A56] active:border-[#3A2A56] active:bg-[#3A2A56]';
+        } else if (props.state === 'outline') {
+            stateClass = 'bg-white border border-[#3A2A56] text-[#3B2A56] hover:border-[#3A2A56] active:bg-[#3A2A56] active:text-white';
+        }
+    }
 
-    // Outline state with active
-    'bg-white border border-[#E9EAEB] hover:border-[#75E0A7] active:bg-[#DCFAE6] active:border-[#ABEFC6]':
-        props.state === 'outline' && !props.error && !props.active,
-    'bg-[#DCFAE6] border border-[#ABEFC6]': props.state === 'outline' && !props.error && props.active,
-
-    // Error states
-    'border border-red-500 bg-red-50 text-red-600 hover:bg-red-100 active:bg-red-200': props.error,
-
-    // Disabled state
-    'bg-gradient-to-b from-white to-gray-50 opacity-50 cursor-not-allowed !border-gray-300 hover:!bg-gradient-to-b hover:!from-white hover:!to-gray-50 active:!bg-gradient-to-b active:!from-white active:!to-gray-50':
-        props.disabled || props.isLoading,
-
-    [props.className]: true,
-}));
+    return `${baseClasses} ${roundedClasses} ${stateClass} ${props.className}`;
+});
 </script>
 
 <template>
@@ -112,7 +125,7 @@ const stateClasses = computed(() => ({
 
             <span
                 v-if="!isIconOnly"
-                :class="[textClass, 'text-[14px] leading-5 font-semibold text-[#414651] font-inter line-clamp-1']"
+                :class="[textClass, 'text-sm leading-5 font-normal text-center font-nunito line-clamp-1']"
             >
                 <slot>{{ label }}</slot>
             </span>
@@ -138,8 +151,8 @@ const stateClasses = computed(() => ({
     height: 18px;
     border-radius: 50%;
     border: 2px solid;
-    border-color: rgb(220, 250, 230);
-    border-right-color: #000000;
+    border-color: rgba(58, 42, 86, 0.2);
+    border-right-color: #3a2a56;
     animation: spinner-d3wgkg 0.8s infinite linear;
 }
 

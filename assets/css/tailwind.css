@@ -1,4 +1,4 @@
-/* assets/css/tailwind.css */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +7,6 @@
 .prose {
     @apply max-w-none;
 }
-
 .prose h1 {
     @apply text-4xl font-bold mb-4;
 }
