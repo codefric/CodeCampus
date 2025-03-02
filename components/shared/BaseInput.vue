@@ -34,13 +34,13 @@ const props = withDefaults(defineProps<Props>(), {
     autofocus: false,
     autocomplete: '',
     id: '',
-    max: 8,
-    min: 1,
-    maxlength: 5,
+    max: undefined,
+    min: undefined,
+    maxlength: undefined,
     name: '',
     pattern: '',
     placeholder: '',
-    step: 1,
+    step: undefined,
 });
 
 const emit = defineEmits<{
@@ -50,6 +50,8 @@ const emit = defineEmits<{
     (e: 'blur', event: FocusEvent): void;
     (e: 'clear'): void;
 }>();
+
+const slots = useSlots();
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const isFocused = ref(false);
@@ -64,8 +66,8 @@ const sizeClasses = computed(() => {
 });
 
 const paddingClasses = computed(() => {
-    const hasPrefixIcon = !!slots['prefix-icon'];
-    const hasSuffixIcon = !!slots['suffix-icon'] || props.clearable;
+    const hasPrefixIcon = !!slots['prefix-icon'] as boolean;
+    const hasSuffixIcon = (!!slots['suffix-icon'] || props.clearable) as boolean;
 
     const basePadding = {
         sm: hasPrefixIcon ? 'pl-8' : 'pl-3',
@@ -95,8 +97,8 @@ const stateClasses = computed(() => {
     const states = {
         default: `
             border-[#D5D7DA] bg-white
-            focus:border-[#75E0A7] focus:ring-[#DCFAE6]
-            hover:border-[#75E0A7]
+            focus:border-[#3A2A56] focus:ring-[#3A2A56]
+            hover:border-[#3A2A56]
         `,
         success: `
             border-[#47CD89] bg-white
@@ -116,8 +118,6 @@ const stateClasses = computed(() => {
 
     return states[props.state];
 });
-
-const slots = useSlots();
 
 const clear = () => {
     emit('update:modelValue', '');
@@ -146,6 +146,7 @@ const onChange = (event: Event) => {
 };
 </script>
 
+<!-- eslint-disable vue/html-self-closing -->
 <template>
     <div class="relative">
         <input
@@ -176,7 +177,7 @@ const onChange = (event: Event) => {
             @focus="onFocus"
             @blur="onBlur"
             @change="onChange"
-        >
+        />
 
         <!-- Prefix Icon -->
         <div
